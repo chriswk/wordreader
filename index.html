@@ -8841,7 +8841,21 @@ var _evancz$elm_http$Http$post = F3(
 			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
 	});
 var _user$project$WordReader$selectNewWord = function (model) {
-	return _elm_community$elm_random_extra$Random_Array$sample(model.words);
+	var wordCount = model.wordCount;
+	var wordList = function () {
+		var _p0 = wordCount;
+		if (_p0.ctor === 'Just') {
+			var _p1 = _p0._0;
+			return (_elm_lang$core$Native_Utils.cmp(_p1, 100) > 0) ? A2(
+				_elm_lang$core$List$take,
+				100,
+				A2(_elm_lang$core$List$drop, _p1 - 100, model.words)) : A2(_elm_lang$core$List$take, 100, model.words);
+		} else {
+			return model.words;
+		}
+	}();
+	var wordArray = _elm_lang$core$Array$fromList(wordList);
+	return _elm_community$elm_random_extra$Random_Array$sample(wordArray);
 };
 var _user$project$WordReader$fetchWords = _evancz$elm_http$Http$getString('http://chriswk.github.io/wordreader/data/ord1000.txt');
 var _user$project$WordReader$wordBox = function (model) {
@@ -8859,9 +8873,9 @@ var _user$project$WordReader$wordBox = function (model) {
 			[
 				_elm_lang$html$Html$text(
 				function () {
-					var _p0 = model.currentWord;
-					if (_p0.ctor === 'Just') {
-						return _p0._0;
+					var _p2 = model.currentWord;
+					if (_p2.ctor === 'Just') {
+						return _p2._0;
 					} else {
 						return '';
 					}
@@ -8869,12 +8883,11 @@ var _user$project$WordReader$wordBox = function (model) {
 			]));
 };
 var _user$project$WordReader$initalModel = {
-	words: _elm_lang$core$Array$fromList(
-		_elm_lang$core$Native_List.fromArray(
-			['Hello', 'Goodbye'])),
+	words: _elm_lang$core$Native_List.fromArray(
+		[]),
 	interval: 500,
 	playing: false,
-	wordCount: 0,
+	wordCount: _elm_lang$core$Maybe$Nothing,
 	currentWord: _elm_lang$core$Maybe$Nothing,
 	lastMessage: ''
 };
@@ -8898,8 +8911,7 @@ var _user$project$WordReader$getWords = function () {
 			return A2(_elm_lang$core$String$split, '\n', s);
 		},
 		wordList);
-	var toArray = A2(_elm_lang$core$Task$map, _elm_lang$core$Array$fromList, splitOnNewLine);
-	return A3(_elm_lang$core$Task$perform, _user$project$WordReader$FetchFail, _user$project$WordReader$FetchSucceed, toArray);
+	return A3(_elm_lang$core$Task$perform, _user$project$WordReader$FetchFail, _user$project$WordReader$FetchSucceed, splitOnNewLine);
 }();
 var _user$project$WordReader$init = {ctor: '_Tuple2', _0: _user$project$WordReader$initalModel, _1: _user$project$WordReader$getWords};
 var _user$project$WordReader$SelectedWord = function (a) {
@@ -8907,8 +8919,8 @@ var _user$project$WordReader$SelectedWord = function (a) {
 };
 var _user$project$WordReader$update = F2(
 	function (msg, model) {
-		var _p1 = msg;
-		switch (_p1.ctor) {
+		var _p3 = msg;
+		switch (_p3.ctor) {
 			case 'NoOp':
 				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 			case 'UpdateInterval':
@@ -8916,7 +8928,7 @@ var _user$project$WordReader$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{interval: _p1._0, playing: true}),
+						{interval: _p3._0, playing: true}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'StartWords':
@@ -8924,7 +8936,7 @@ var _user$project$WordReader$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{playing: true}),
+						{playing: true, wordCount: _p3._0}),
 					_1: A2(
 						_elm_lang$core$Random$generate,
 						_user$project$WordReader$SelectedWord,
@@ -8935,7 +8947,7 @@ var _user$project$WordReader$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{currentWord: _p1._0}),
+						{currentWord: _p3._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'StopWords':
@@ -8956,15 +8968,11 @@ var _user$project$WordReader$update = F2(
 						_user$project$WordReader$selectNewWord(model))
 				};
 			case 'FetchSucceed':
-				var _p2 = _p1._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{
-							words: _p2,
-							wordCount: _elm_lang$core$Array$length(_p2)
-						}),
+						{words: _p3._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
@@ -8973,13 +8981,15 @@ var _user$project$WordReader$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							lastMessage: _elm_lang$core$Basics$toString(_p1._0)
+							lastMessage: _elm_lang$core$Basics$toString(_p3._0)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 		}
 	});
-var _user$project$WordReader$StartWords = {ctor: 'StartWords'};
+var _user$project$WordReader$StartWords = function (a) {
+	return {ctor: 'StartWords', _0: a};
+};
 var _user$project$WordReader$wordButtons = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
@@ -8998,11 +9008,51 @@ var _user$project$WordReader$wordButtons = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Attributes$class('b'),
-						_elm_lang$html$Html_Events$onClick(_user$project$WordReader$StartWords)
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$WordReader$StartWords(_elm_lang$core$Maybe$Nothing))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html$text('Start!')
+						_elm_lang$html$Html$text('1000 mest brukte ord')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('b'),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$WordReader$StartWords(
+							_elm_lang$core$Maybe$Just(100)))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('100 mest brukte ord')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('b'),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$WordReader$StartWords(
+							_elm_lang$core$Maybe$Just(200)))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('100-200 mest brukte ord')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('b'),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$WordReader$StartWords(
+							_elm_lang$core$Maybe$Just(300)))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('200-300')
 					])),
 				A2(
 				_elm_lang$html$Html$button,
