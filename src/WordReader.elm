@@ -16,10 +16,10 @@ import String as String
 
 
 type alias Model =
-    { words : Array String
+    { words : List String
     , interval : Float
     , playing : Bool
-    , wordCount : Int
+    , wordCount : Maybe Int
     , currentWord : Maybe String
     , lastMessage : String
     }
@@ -29,22 +29,25 @@ type Msg
     = NoOp
     | UpdateInterval Float
     | Tick Float
-    | StartWords
+    | StartWords (Maybe Int)
     | SelectedWord (Maybe String)
-    | FetchSucceed (Array String)
+    | FetchSucceed (List String)
     | FetchFail Http.Error
     | StopWords
 
 
 initalModel : Model
 initalModel =
-    { words = Array.fromList [ "Hello", "Goodbye" ], interval = 500, playing = False, wordCount = 0, currentWord = Nothing, lastMessage = "" }
+    { words = [], interval = 500, playing = False, wordCount = Nothing, currentWord = Nothing, lastMessage = "" }
 
 
 wordButtons : Model -> Html Msg
 wordButtons model =
     div [ style [ ( "float", "left" ) ] ]
-        [ button [ class "b", onClick StartWords ] [ text "Start!" ]
+        [ button [ class "b", onClick (StartWords Nothing) ] [ text "1000 mest brukte ord" ]
+        , button [ class "b", onClick (StartWords (Just 100)) ] [ text "100 mest brukte ord" ]
+        , button [ class "b", onClick (StartWords (Just 200)) ] [ text "100-200 mest brukte ord" ]
+        , button [ class "b", onClick (StartWords (Just 300)) ] [ text "200-300" ]
         , button [ class "b", onClick StopWords ] [ text "Ta en pause!" ]
         ]
 
@@ -84,7 +87,6 @@ view model =
             ]
         , div [ class "center" ]
             [ text model.lastMessage
-            , text (toString model.wordCount)
             ]
         ]
 
@@ -95,7 +97,25 @@ fetchWords =
 
 
 selectNewWord model =
-    sample model.words
+    let
+        wordCount =
+            model.wordCount
+
+        wordList =
+            case wordCount of
+                Just c ->
+                    if c > 100 then
+                        List.take 100 (List.drop (c - 100) model.words)
+                    else
+                        List.take 100 model.words
+
+                Nothing ->
+                    model.words
+
+        wordArray =
+            fromList wordList
+    in
+        sample wordArray
 
 
 subscriptions : Model -> Sub Msg
@@ -115,8 +135,8 @@ update msg model =
         UpdateInterval time ->
             ( { model | interval = time, playing = True }, Cmd.none )
 
-        StartWords ->
-            ( { model | playing = True }, Random.generate SelectedWord (selectNewWord model) )
+        StartWords count ->
+            ( { model | playing = True, wordCount = count }, Random.generate SelectedWord (selectNewWord model) )
 
         SelectedWord word ->
             ( { model | currentWord = word }, Cmd.none )
@@ -128,7 +148,7 @@ update msg model =
             ( model, Random.generate SelectedWord (selectNewWord model) )
 
         FetchSucceed wordList ->
-            ( { model | words = wordList, wordCount = Array.length wordList }, Cmd.none )
+            ( { model | words = wordList }, Cmd.none )
 
         FetchFail e ->
             ( { model | lastMessage = toString e }, Cmd.none )
@@ -145,11 +165,8 @@ getWords =
 
         splitOnNewLine =
             Task.map (\s -> String.split "\n" s) wordList
-
-        toArray =
-            Task.map fromList splitOnNewLine
     in
-        Task.perform FetchFail FetchSucceed toArray
+        Task.perform FetchFail FetchSucceed splitOnNewLine
 
 
 init : ( Model, Cmd Msg )
