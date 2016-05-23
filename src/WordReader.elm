@@ -5,26 +5,33 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Html.App as Html
+import Array exposing (Array)
+import Random exposing (generate, Generator)
+import Random.Array exposing (sample)
+import Time exposing (millisecond, Time)
 
 
 type alias Model =
-    { words : List String
+    { words : Array String
     , interval : Float
     , playing : Bool
     , wordList : Int
+    , currentWord : Maybe String
     }
 
 
 type Msg
     = NoOp
     | UpdateInterval Float
+    | Tick Float
     | StartWords Int
+    | SelectedWord (Maybe String)
     | StopWords
 
 
 initalModel : Model
 initalModel =
-    { words = [], interval = 0, playing = False, wordList = 100 }
+    { words = Array.fromList [ "Hello", "Goodbye" ], interval = 0, playing = False, wordList = 100, currentWord = Nothing }
 
 
 wordButtons : Model -> Html Msg
@@ -45,17 +52,40 @@ playButtons model =
         ]
 
 
+wordBox : Model -> Html Msg
+wordBox model =
+    div [ style [ ( "font-size", "15vmax" ) ] ]
+        [ text
+            (case model.currentWord of
+                Just w ->
+                    w
+
+                Nothing ->
+                    ""
+            )
+        ]
+
+
 view : Model -> Html Msg
 view model =
-    div [ class "center " ]
-        [ wordButtons model
-        , playButtons model
+    div []
+        [ div [ class "center " ]
+            [ wordButtons model
+            , playButtons model
+            ]
+        , div [ class "center" ]
+            [ wordBox model
+            ]
         ]
+
+
+selectNewWord model =
+    sample model.words
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Time.every (model.interval * millisecond) Tick
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -68,10 +98,16 @@ update msg model =
             ( { model | interval = time }, Cmd.none )
 
         StartWords wordList ->
-            ( { model | playing = True }, Cmd.none )
+            ( { model | playing = True }, Random.generate SelectedWord (selectNewWord model) )
+
+        SelectedWord word ->
+            ( { model | currentWord = word }, Cmd.none )
 
         StopWords ->
             ( { model | playing = False }, Cmd.none )
+
+        Tick time ->
+            ( model, Random.generate SelectedWord (selectNewWord model) )
 
 
 init : ( Model, Cmd Msg )
