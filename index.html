@@ -8857,7 +8857,19 @@ var _user$project$WordReader$selectNewWord = function (model) {
 	var wordArray = _elm_lang$core$Array$fromList(wordList);
 	return _elm_community$elm_random_extra$Random_Array$sample(wordArray);
 };
-var _user$project$WordReader$fetchWords = _evancz$elm_http$Http$getString('http://chriswk.github.io/wordreader/data/ord1000.txt');
+var _user$project$WordReader$counter = function (count) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('wordcount')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text(
+				_elm_lang$core$Basics$toString(count))
+			]));
+};
 var _user$project$WordReader$wordBox = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
@@ -8889,11 +8901,12 @@ var _user$project$WordReader$initalModel = {
 	playing: false,
 	wordCount: _elm_lang$core$Maybe$Nothing,
 	currentWord: _elm_lang$core$Maybe$Nothing,
-	lastMessage: ''
+	lastMessage: '',
+	wordsShown: 0
 };
-var _user$project$WordReader$Model = F6(
-	function (a, b, c, d, e, f) {
-		return {words: a, interval: b, playing: c, wordCount: d, currentWord: e, lastMessage: f};
+var _user$project$WordReader$Model = F7(
+	function (a, b, c, d, e, f, g) {
+		return {words: a, interval: b, playing: c, wordCount: d, currentWord: e, lastMessage: f, wordsShown: g};
 	});
 var _user$project$WordReader$StopWords = {ctor: 'StopWords'};
 var _user$project$WordReader$FetchFail = function (a) {
@@ -8947,7 +8960,7 @@ var _user$project$WordReader$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{currentWord: _p3._0}),
+						{currentWord: _p3._0, wordsShown: model.wordsShown + 1}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'StopWords':
@@ -9143,6 +9156,7 @@ var _user$project$WordReader$view = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_user$project$WordReader$wordButtons(model),
+						_user$project$WordReader$counter(model.wordsShown),
 						_user$project$WordReader$playButtons(model)
 					])),
 				A2(
