@@ -11,7 +11,6 @@ import Random exposing (generate, Generator)
 import Random.Array exposing (sample)
 import Time exposing (millisecond, Time)
 import Task exposing (Task)
-import Json.Decode exposing (list, string)
 import String as String
 
 
@@ -22,6 +21,7 @@ type alias Model =
     , wordCount : Maybe Int
     , currentWord : Maybe String
     , lastMessage : String
+    , wordsShown : Int
     }
 
 
@@ -38,7 +38,7 @@ type Msg
 
 initalModel : Model
 initalModel =
-    { words = [], interval = 500, playing = False, wordCount = Nothing, currentWord = Nothing, lastMessage = "" }
+    { words = [], interval = 500, playing = False, wordCount = Nothing, currentWord = Nothing, lastMessage = "", wordsShown = 0 }
 
 
 wordButtons : Model -> Html Msg
@@ -75,11 +75,17 @@ wordBox model =
         ]
 
 
+counter : Int -> Html Msg
+counter count =
+    div [ class "wordcount" ] [ text (toString count) ]
+
+
 view : Model -> Html Msg
 view model =
     div []
         [ div [ class "center " ]
             [ wordButtons model
+            , counter model.wordsShown
             , playButtons model
             ]
         , div [ class "center" ]
@@ -91,11 +97,7 @@ view model =
         ]
 
 
-fetchWords : Task Http.Error String
-fetchWords =
-    Http.getString "http://chriswk.github.io/wordreader/data/ord1000.txt"
-
-
+selectNewWord : Model -> Generator (Maybe String)
 selectNewWord model =
     let
         wordCount =
@@ -139,12 +141,12 @@ update msg model =
             ( { model | playing = True, wordCount = count }, Random.generate SelectedWord (selectNewWord model) )
 
         SelectedWord word ->
-            ( { model | currentWord = word }, Cmd.none )
+            ( { model | currentWord = word, wordsShown = model.wordsShown + 1 }, Cmd.none )
 
         StopWords ->
             ( { model | playing = False }, Cmd.none )
 
-        Tick time ->
+        Tick _ ->
             ( model, Random.generate SelectedWord (selectNewWord model) )
 
         FetchSucceed wordList ->
@@ -174,6 +176,7 @@ init =
     ( initalModel, getWords )
 
 
+main : Program Never
 main =
     Html.program
         { init = init
